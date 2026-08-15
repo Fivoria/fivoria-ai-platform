@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fivoria-inference
+  namespace: fivoria-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fivoria-inference
+  template:
+    metadata:
+      labels:
+        app: fivoria-inference
+    spec:
+      containers:
+      - name: inference
+        image: fivoria-ai/inference:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: api
+        - containerPort: 6006
+          name: metrics
+        resources:
+          limits:
+            nvidia.com/gpu: 4
+            memory: 64Gi
+            cpu: 32
+          requests:
+            nvidia.com/gpu: 4
+            memory: 64Gi
+            cpu: 32
+        env:
+        - name: MODEL_PATH
+          value: "/workspace/models/fivoria-100b"
+        - name: TENSOR_PARALLEL_SIZE
+          value: "4"
+        - name: MAX_MODEL_LEN
+          value: "32768"
+        volumeMounts:
+        - name: models
+          mountPath: /workspace/models
+        - name: shm
+          mountPath: /dev/shm
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: fivoria-models-pvc
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 8Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-inference
+  namespace: fivoria-ai
+spec:
+  selector:
+    app: fivoria-inference
+  ports:
+  - name: api
+    port: 8000
+    targetPort: 8000
+  - name: metrics
+    port: 6006
+    targetPort: 6006
+  type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fivoria-inference-hpa
+  namespace: fivoria-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fivoria-inference
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fivoria-config
+  namespace: fivoria
+data:
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_NAME: "fivoria_ai"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRATION_HOURS: "24"
+  DOMAIN: "fivoria.tech"
+  API_URL: "https://api.fivoria.tech"
+  FRONTEND_URL: "https://fivoria.tech"
+  ALLOWED_ORIGINS: "https://fivoria.tech,https://api.fivoria.tech"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_PER_MINUTE: "60"
+  MODEL_PATH: "/app/models"
+  CHECKPOINT_PATH: "/app/checkpoints"

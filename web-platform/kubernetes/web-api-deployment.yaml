@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-api
+  namespace: fivoria
+  labels:
+    app: web-api
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-api
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: web-api
+        tier: backend
+    spec:
+      containers:
+      - name: web-api
+        image: fivoria/web-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_NAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: DB_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: JWT_SECRET
+        - name: JWT_ALGORITHM
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: JWT_ALGORITHM
+        - name: JWT_EXPIRATION_HOURS
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: JWT_EXPIRATION_HOURS
+        - name: DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DOMAIN
+        - name: API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: API_URL
+        - name: FRONTEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: FRONTEND_URL
+        - name: ALLOWED_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: ALLOWED_ORIGINS
+        - name: RATE_LIMIT_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: RATE_LIMIT_ENABLED
+        - name: RATE_LIMIT_PER_MINUTE
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: RATE_LIMIT_PER_MINUTE
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+        - name: models
+          mountPath: /app/models
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 2
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: data
+        emptyDir: {}
+      - name: models
+        persistentVolumeClaim:
+          claimName: models-pvc

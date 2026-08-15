@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-web-api
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-web-api
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-agent-api
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-agent-api
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-project-service
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-project-service
+  ports:
+  - protocol: TCP
+    port: 8003
+    targetPort: 8003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-model-gateway
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-model-gateway
+  ports:
+  - protocol: TCP
+    port: 8004
+    targetPort: 8004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-preview-service
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-preview-service
+  ports:
+  - protocol: TCP
+    port: 8005
+    targetPort: 8005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fivoria-monitoring
+  namespace: fivoria
+spec:
+  selector:
+    app: fivoria-monitoring
+  ports:
+  - protocol: TCP
+    port: 8006
+    targetPort: 8006

@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  mysql:
+    build:
+      context: ..
+      dockerfile: web-platform/docker/mysql.Dockerfile
+    container_name: fivoria-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password_secure_2024}
+      MYSQL_DATABASE: ${DB_NAME:-fivoria_ai}
+      MYSQL_USER: ${DB_USER:-fivoria_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-fivoria_secure_password_2024}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - fivoria-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    build:
+      context: ..
+      dockerfile: web-platform/docker/redis.Dockerfile
+    container_name: fivoria-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password_2024}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fivoria-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  web-api:
+    build:
+      context: ..
+      dockerfile: web-platform/docker/web-api.Dockerfile
+    container_name: fivoria-web-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-fivoria_ai}
+      DB_USER: ${DB_USER:-fivoria_user}
+      DB_PASSWORD: ${DB_PASSWORD:-fivoria_secure_password_2024}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password_2024}
+      JWT_SECRET: ${JWT_SECRET:-fivoria_jwt_secret_key_2024_secure}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_HOURS: 24
+      DOMAIN: ${DOMAIN:-fivoria.tech}
+      API_URL: ${API_URL:-https://api.fivoria.tech}
+      FRONTEND_URL: ${FRONTEND_URL:-https://fivoria.tech}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://fivoria.tech,https://api.fivoria.tech}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_PER_MINUTE: 60
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    networks:
+      - fivoria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  agent-api:
+    build:
+      context: ..
+      dockerfile: web-platform/docker/agent-api.Dockerfile
+    container_name: fivoria-agent-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-fivoria_ai}
+      DB_USER: ${DB_USER:-fivoria_user}
+      DB_PASSWORD: ${DB_PASSWORD:-fivoria_secure_password_2024}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password_2024}
+      JWT_SECRET: ${JWT_SECRET:-fivoria_jwt_secret_key_2024_secure}
+      MODEL_PATH: /app/models
+      CHECKPOINT_PATH: /app/checkpoints
+    ports:
+      - "8001:8001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./checkpoints:/app/checkpoints
+    networks:
+      - fivoria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: web-platform/docker/frontend.Dockerfile
+    container_name: fivoria-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${API_URL:-https://api.fivoria.tech}
+      NEXT_PUBLIC_AGENT_URL: ${AGENT_URL:-https://agent.fivoria.tech}
+      NEXT_PUBLIC_DOMAIN: ${DOMAIN:-fivoria.tech}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - web-api
+      - agent-api
+    networks:
+      - fivoria-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: fivoria-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - frontend
+      - web-api
+      - agent-api
+    networks:
+      - fivoria-network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  fivoria-network:
+    driver: bridge

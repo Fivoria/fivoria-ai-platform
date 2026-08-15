@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # Frontend
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - NEXT_PUBLIC_WS_URL=http://localhost:8002
+      - NEXT_PUBLIC_MODEL_GATEWAY_URL=http://localhost:8004
+    depends_on:
+      - web-api
+      - agent-api
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - web-api
+      - agent-api
+      - project-service
+      - model-gateway
+
+  # Web API Service
+  web-api:
+    build:
+      context: ../services/web-api
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=mysql://fivoria:password@mysql:3306/fivoria
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - mysql
+      - redis
+
+  # Agent API Service
+  agent-api:
+    build:
+      context: ../services/agent-api
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - redis
+
+  # Project Service
+  project-service:
+    build:
+      context: ../services/project-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    volumes:
+      - /tmp/fivoria-workspaces:/tmp/fivoria-workspaces
+
+  # Model Gateway
+  model-gateway:
+    build:
+      context: ../services/model-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+
+  # Preview Service
+  preview-service:
+    build:
+      context: ../services/preview-service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - docker
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=fivoria
+      - MYSQL_USER=fivoria
+      - MYSQL_PASSWORD=password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Celery Workers
+  document-worker:
+    build:
+      context: ../workers/document_processor
+      dockerfile: Dockerfile
+    command: celery -A main worker --loglevel=info
+    depends_on:
+      - redis
+
+  repository-worker:
+    build:
+      context: ../workers/repository_indexer
+      dockerfile: Dockerfile
+    command: celery -A main worker --loglevel=info
+    depends_on:
+      - redis
+
+  task-worker:
+    build:
+      context: ../workers/task_worker
+      dockerfile: Dockerfile
+    command: celery -A main worker --loglevel=info
+    depends_on:
+      - redis
+
+volumes:
+  mysql_data:
+  redis_data:

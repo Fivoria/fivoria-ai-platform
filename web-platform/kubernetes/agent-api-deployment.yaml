@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-api
+  namespace: fivoria
+  labels:
+    app: agent-api
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agent-api
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: agent-api
+        tier: backend
+    spec:
+      containers:
+      - name: agent-api
+        image: fivoria/agent-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: DB_NAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: DB_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: fivoria-secret
+              key: JWT_SECRET
+        - name: MODEL_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: MODEL_PATH
+        - name: CHECKPOINT_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: fivoria-config
+              key: CHECKPOINT_PATH
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+        - name: models
+          mountPath: /app/models
+        - name: checkpoints
+          mountPath: /app/checkpoints
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 2
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: data
+        emptyDir: {}
+      - name: models
+        persistentVolumeClaim:
+          claimName: models-pvc
+      - name: checkpoints
+        persistentVolumeClaim:
+          claimName: checkpoints-pvc

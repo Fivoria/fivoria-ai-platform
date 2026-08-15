@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fivoria-frontend
+  namespace: fivoria
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fivoria-frontend
+  template:
+    metadata:
+      labels:
+        app: fivoria-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: fivoria/frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://api-gateway:8000"
+        - name: NEXT_PUBLIC_WS_URL
+          value: "http://agent-api:8002"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

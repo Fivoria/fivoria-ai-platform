@@ -1,0 +1,85 @@
+# Fivoria AI Platform Requirements
+
+# Core ML
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Training
+accelerate>=0.25.0
+transformers>=4.35.0
+tokenizers>=0.15.0
+datasets>=2.15.0
+peft>=0.6.0
+trl>=0.7.0
+
+# Distributed Training (optional, requires GPU cluster)
+# deepspeed>=0.12.0
+# megatron-core>=0.5.0
+# nemo-toolkit>=1.0.0
+
+# Inference
+vllm>=0.2.0
+# tensorrt-llm>=0.5.0
+
+# API
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Database
+sqlalchemy>=2.0.0
+pymysql>=1.1.0
+redis>=5.0.0
+
+# Vector Database
+# weaviate-client>=3.24.0
+# qdrant-client>=1.6.0
+# pinecone-client>=2.2.0
+
+# RAG
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.0
+# faiss-gpu>=1.7.0
+
+# Security
+pyjwt>=2.8.0
+bcrypt>=4.1.0
+cryptography>=41.0.0
+
+# Observability
+prometheus-client>=0.19.0
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation-fastapi>=0.41b0
+
+# Monitoring
+# wandb>=0.16.0
+# mlflow>=2.8.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tqdm>=4.66.0
+requests>=2.31.0
+httpx>=0.25.0
+aiofiles>=23.2.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# Code Quality
+black>=23.11.0
+isort>=5.12.0
+flake8>=6.1.0
+mypy>=1.7.0
+
+# Development
+jupyter>=1.0.0
+ipython>=8.17.0
+ipywidgets>=8.1.0

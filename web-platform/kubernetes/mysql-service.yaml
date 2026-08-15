@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: fivoria
+  labels:
+    app: mysql
+    tier: database
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+    name: mysql
+  selector:
+    app: mysql
+    tier: database
+  type: ClusterIP

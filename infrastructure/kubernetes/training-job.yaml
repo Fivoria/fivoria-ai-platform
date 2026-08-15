@@ -1,0 +1,88 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: fivoria-training
+  namespace: fivoria-ai
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      template:
+        spec:
+          containers:
+          - name: pytorch
+            image: fivoria-ai/training:latest
+            imagePullPolicy: Always
+            resources:
+              limits:
+                nvidia.com/gpu: 8
+                memory: 128Gi
+                cpu: 64
+              requests:
+                nvidia.com/gpu: 8
+                memory: 128Gi
+                cpu: 64
+            env:
+            - name: NCCL_DEBUG
+              value: INFO
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1,2,3,4,5,6,7"
+            volumeMounts:
+            - name: data
+              mountPath: /workspace/data
+            - name: checkpoints
+              mountPath: /workspace/checkpoints
+            - name: shm
+              mountPath: /dev/shm
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: fivoria-data-pvc
+          - name: checkpoints
+            persistentVolumeClaim:
+              claimName: fivoria-checkpoints-pvc
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 16Gi
+    Worker:
+      replicas: 3  # 4 nodes total with 8 GPUs each = 32 GPUs
+      template:
+        spec:
+          containers:
+          - name: pytorch
+            image: fivoria-ai/training:latest
+            imagePullPolicy: Always
+            resources:
+              resources:
+              limits:
+                nvidia.com/gpu: 8
+                memory: 128Gi
+                cpu: 64
+              requests:
+                nvidia.com/gpu: 8
+                memory: 128Gi
+                cpu: 64
+            env:
+            - name: NCCL_DEBUG
+              value: INFO
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1,2,3,4,5,6,7"
+            volumeMounts:
+            - name: data
+              mountPath: /workspace/data
+            - name: checkpoints
+              mountPath: /workspace/checkpoints
+            - name: shm
+              mountPath: /dev/shm
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: fivoria-data-pvc
+          - name: checkpoints
+            persistentVolumeClaim:
+              claimName: fivoria-checkpoints-pvc
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 16Gi

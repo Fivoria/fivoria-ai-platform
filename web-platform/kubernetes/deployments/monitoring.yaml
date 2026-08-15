@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fivoria-monitoring
+  namespace: fivoria
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fivoria-monitoring
+  template:
+    metadata:
+      labels:
+        app: fivoria-monitoring
+    spec:
+      containers:
+      - name: monitoring
+        image: fivoria/monitoring:latest
+        ports:
+        - containerPort: 8006
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
