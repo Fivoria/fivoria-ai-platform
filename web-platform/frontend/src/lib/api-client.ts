@@ -203,7 +203,7 @@ class ApiClient {
   }
 
   // Document endpoints
-  async uploadDocument(file: File, projectId?: string): Promise<ApiResponse<{ document_id: string }>> {
+  async uploadDocument(file: globalThis.File, projectId?: string): Promise<ApiResponse<{ document_id: string }>> {
     const formData = new FormData();
     formData.append('file', file as any);
     if (projectId) {
