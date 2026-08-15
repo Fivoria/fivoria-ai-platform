@@ -13,7 +13,7 @@ services:
       MYSQL_USER: ${DB_USER:-fivoria_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-fivoria_secure_password_2024}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -34,7 +34,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password_2024}
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -140,7 +140,7 @@ services:
       NEXT_PUBLIC_AGENT_URL: ${AGENT_URL:-https://agent.fivoria.tech}
       NEXT_PUBLIC_DOMAIN: ${DOMAIN:-fivoria.tech}
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - web-api
       - agent-api
